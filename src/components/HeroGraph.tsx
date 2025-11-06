@@ -16,11 +16,10 @@ export function HeroGraph({ hero }: { hero: Hero }) {
 
         async function loadData() {
             try {
-                // Извлекаем ID фильмов (если приходят как URL — очищаем)
                 const filmIds = hero.films.map((f: string | number) =>
                     typeof f === 'string' && f.includes('/') ? f.split('/').pop() : f
                 ).filter(Boolean) as (string | number)[];
-                const films = await fetchMultiple('films', filmIds);
+                const films = (await fetchMultiple('films', filmIds)) as Film[];
 
 
                 const heroNode: Node = {
@@ -31,22 +30,22 @@ export function HeroGraph({ hero }: { hero: Hero }) {
                 };
 
 
-                const filmNodes: Node[] = films.map((film: Film, i: number) => ({
+                const filmNodes: Node[] = (films as Film[]).map((film, i) => ({
                     id: `film-${film.id || i}`,
                     position: { x: i * 180, y: 150 },
                     data: { label: film.title },
                 }));
 
 
-                const filmEdges: Edge[] = films.map((film: Film, i: number) => ({
+                const filmEdges: Edge[] = (films as Film[]).map((film: Film, i: number) => ({
                     id: `e-hero-film-${i}`,
                     source: 'hero',
                     target: `film-${film.id || i}`,
                 }));
 
 
-                // Загрузка всех starships для каждого фильма
-                const allStarshipPromises = films.map((film: Film) => {
+
+                const allStarshipPromises = (films as Film[]).map((film: Film) => {
                     const shipIds = (film.starships || []).map((s: string | number) =>
                         typeof s === 'string' && s.includes('/') ? s.split('/').pop() : s
                     ).filter(Boolean) as (string | number)[];
@@ -62,7 +61,7 @@ export function HeroGraph({ hero }: { hero: Hero }) {
 
 
                 allStarships.forEach((ships, fi) => {
-                    ships.forEach((ship:Starship , si: number) => {
+                    (ships as Starship[]).forEach((ship:Starship , si: number) => {
                         const nodeId = `starship-${fi}-${si}`;
                         starshipNodes.push({
                             id: nodeId,
