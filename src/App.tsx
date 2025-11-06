@@ -14,7 +14,11 @@ export default function App() {
           <h2>Star Wars Graph Explorer</h2>
         </header>
         <main style={{ flex: 1 }}>
-          <HeroGraph hero={selected} />
+          {selected ? (
+            <HeroGraph hero={selected} />
+          ) : (
+            <div style={{ padding: 12 }}>Select a hero to view the graph.</div>
+          )}
         </main>
       </div>
     </div>
