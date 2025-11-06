@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HeroGraph } from './components/HeroGraph';
+import HeroGraph from './components/HeroGraph';
 import { HeroList } from './components/HeroList';
 import type { Hero } from './types';
 
@@ -15,7 +15,7 @@ export default function App() {
         </header>
         <main style={{ flex: 1 }}>
           {selected ? (
-            <HeroGraph hero={selected} />
+            <HeroGraph heroId={selected.id} />
           ) : (
             <div style={{ padding: 12 }}>Select a hero to view the graph.</div>
           )}
