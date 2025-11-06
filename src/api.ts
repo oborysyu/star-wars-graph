@@ -1,98 +1,85 @@
-const BASE_URL = 'https://sw-api.starnavi.io';
-
-// --- caching to prevent 429 error ---
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const API_BASE = 'https://sw-api.starnavi.io';
 const cache = new Map<string, any>();
 
-async function cachedFetch(url: string) {
-  if (cache.has(url)) return cache.get(url);
+const REQUEST_DELAY = 200;
+
+let lastRequestTime = 0;
+
+async function rateLimitedFetch(url: string) {
+  const now = Date.now();
+  const diff = now - lastRequestTime;
+
+  if (diff < REQUEST_DELAY) {
+    await new Promise((r) => setTimeout(r, REQUEST_DELAY - diff));
+  }
+
+  lastRequestTime = Date.now();
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
-  const data = await res.json();
+  if (!res.ok) throw new Error(`API error ${res.status}: ${url}`);
+  return res.json();
+}
+
+
+export async function fetchHeroesPage(page = 1) {
+  const url = `${API_BASE}/people/?page=${page}`;
+  if (cache.has(url)) return cache.get(url);
+
+  const data = await rateLimitedFetch(url);
   cache.set(url, data);
   return data;
 }
 
-// --- Limiting the number of simultaneous requests ---
-async function throttleAll<T>(
-  urls: string[],
-  limit = 3,
-  fetchFn = (url: string) => cachedFetch(url)
-): Promise<T[]> {
-  const results: T[] = [];
-  let active = 0;
-  let index = 0;
+export async function fetchHero(id: string | number) {
+  const url = `${API_BASE}/people/${id}`;
+  if (cache.has(url)) return cache.get(url);
 
-  return new Promise((resolve, reject) => {
-    const processNext = () => {
-      if (index >= urls.length && active === 0) {
-        resolve(results);
-        return;
-      }
-
-      while (active < limit && index < urls.length) {
-        const url = urls[index++];
-        active++;
-
-        fetchFn(url)
-          .then((data) => results.push(data))
-          .catch((err) => console.error('Fetch failed:', err))
-          .finally(() => {
-            active--;
-            processNext();
-          });
-      }
-    };
-
-    processNext();
-  });
+  const data = await rateLimitedFetch(url);
+  cache.set(url, data);
+  return data;
 }
 
-// --- API functions ---
+export async function fetchFilm(id: string | number) {
+  const url = `${API_BASE}/films/${id}`;
+  if (cache.has(url)) return cache.get(url);
 
-export async function fetchHeroesPage(page = 1, limit = 10) {
-  const url = `${BASE_URL}/people?page=${page}&limit=${limit}`;
-  return cachedFetch(url);
-				
+  const data = await rateLimitedFetch(url);
+  cache.set(url, data);
+  return data;
 }
 
-						
-export async function fetchHero(id: number | string) {
-  const url = `${BASE_URL}/people/${id}`;
-  return cachedFetch(url);
-					
+export async function fetchStarship(id: string | number) {
+  const url = `${API_BASE}/starships/${id}`;
+  if (cache.has(url)) return cache.get(url);
+
+  const data = await rateLimitedFetch(url);
+  cache.set(url, data);
+  return data;
 }
 
-					 
-export async function fetchFilm(id: number | string) {
-  const url = `${BASE_URL}/films/${id}`;
-  return cachedFetch(url);
-					
-}
-
-						 
-export async function fetchStarship(id: number | string) {
-  const url = `${BASE_URL}/starships/${id}`;
-  return cachedFetch(url);
-					
-}
-
-/** Function to fetch array of resources by ID */
 export async function fetchMultiple(
   type: 'films' | 'starships' | 'people',
-  ids: (string | number)[],
-  concurrency = 3
+  ids: (string | number)[]
 ) {
-  const urls = ids
-    .filter(Boolean)
-    .map((id) => {
-      const cleanId =
-        typeof id === 'string' && id.includes('/')
-          ? id.split('/').pop()
-          : id;
-      return `${BASE_URL}/${type}/${cleanId}`;
-															   
-					  
-    });
+  const results = [];
 
-  return throttleAll(urls, concurrency);
+  for (const id of ids) {
+    if (!id) continue;
+
+    const url = `${API_BASE}/${type}/${id}`;
+    if (cache.has(url)) {
+      results.push(cache.get(url));
+      continue;
+    }
+
+    try {
+      const data = await rateLimitedFetch(url);
+      cache.set(url, data);
+      results.push(data);
+    } catch (err) {
+      console.warn(`Skipping failed fetch for ${url}:`, err);
+    }
+  }
+
+  return results;
 }
