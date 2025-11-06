@@ -19,7 +19,7 @@ export function HeroGraph({ hero }: { hero: Hero }) {
                 // Извлекаем ID фильмов (если приходят как URL — очищаем)
                 const filmIds = hero.films.map((f: string | number) =>
                     typeof f === 'string' && f.includes('/') ? f.split('/').pop() : f
-                );
+                ).filter(Boolean) as (string | number)[];
                 const films = await fetchMultiple('films', filmIds);
 
 
@@ -49,7 +49,7 @@ export function HeroGraph({ hero }: { hero: Hero }) {
                 const allStarshipPromises = films.map((film: Film) => {
                     const shipIds = (film.starships || []).map((s: string | number) =>
                         typeof s === 'string' && s.includes('/') ? s.split('/').pop() : s
-                    );
+                    ).filter(Boolean) as (string | number)[];
                     return fetchMultiple('starships', shipIds);
                 });
 
