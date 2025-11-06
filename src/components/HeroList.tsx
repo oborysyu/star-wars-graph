@@ -1,5 +1,4 @@
-// 📁 src/components/HeroList.tsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchHeroesPage } from '../api';
 import type { Hero } from '../types';
 
@@ -13,7 +12,7 @@ export function HeroList({ onSelect }: { onSelect: (hero: Hero) => void }) {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
-        fetchHeroesPage(page, 10)
+        fetchHeroesPage(page)
             .then((data) => {
                 if (cancelled) return;
                 const results = data.results ?? data.items ?? [];
